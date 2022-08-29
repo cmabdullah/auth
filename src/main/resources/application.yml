@@ -1,0 +1,59 @@
+logging:
+  level:
+    com.ecommarce: DEBUG
+    org.springframework.web: DEBUG
+    org.hibernate: ERROR
+
+server:
+  port : 8081
+  # ===============================
+  # = DATA SOURCE
+  # ===============================
+spring:
+  # Set here configurations for the database connection
+  datasource:
+    url: jdbc:mysql://localhost:3306/productdbML?allowPublicKeyRetrieval=true&useSSL=false&createDatabaseIfNotExist=true
+    username: root
+    password: rootcm
+    testWhileIdle: true
+    validationQuery: SELECT 1
+    datasource.driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    show-sql: true
+    hibernate:
+#      ddl-auto: update
+      ddl-auto: create-drop
+  properties:
+    hibernate:
+      dialect: org.hibernate.dialect.MySQL5Dialect
+      id:
+        new_generator_mappings: false
+
+applicationName: Classified E Commerce
+contactEmail: cmabdullah21@gmail.com
+
+app:
+  base-url: http://localhost:8081
+  base-url-api: http://localhost:8081
+  base-url-image: http://localhost:8081
+
+#host:
+#  full:
+#    dns:
+#      auth:
+#        link: http://localhost:8080
+#
+auth:
+  server:
+    schem: http
+
+  token:
+    type: jwt
+    private-signing-key: MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBA
+    public-verifier-key: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1IU7L
+  client:
+    id: client_id
+    secret: client_secret
+
+token:
+  validity: 1296000
