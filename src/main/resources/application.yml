@@ -55,5 +55,8 @@ auth:
     id: client_id
     secret: client_secret
 
-token:
+accessToken:
+  validity: 1296000
+
+refreshToken:
   validity: 1296000

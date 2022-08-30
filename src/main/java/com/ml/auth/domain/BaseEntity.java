@@ -113,4 +113,8 @@ public abstract class BaseEntity implements Serializable {
 	public void setId(long id) {
 		this.id = id;
 	}
+	
+	public boolean isActive() {
+		return active;
+	}
 }

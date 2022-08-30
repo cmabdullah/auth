@@ -2,6 +2,7 @@ package com.ml.auth.jwt;
 
 import com.ml.auth.common.UserContext;
 import com.ml.auth.common.UserPrincipal;
+import com.ml.auth.service.UserService;
 import com.ml.coreweb.exception.ApiError;
 import com.ml.coreweb.util.DateTimeUtil;
 import io.jsonwebtoken.*;
@@ -9,12 +10,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 
 import java.time.ZonedDateTime;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.ml.auth.constants.AuthConstants.*;
 
@@ -30,42 +31,33 @@ import static com.ml.auth.constants.AuthConstants.*;
 public class TokenProviderImpl implements TokenProvider {
 
 	private final JwtProperties jwtProperties;
+	private final UserService userService;
 
 	@Autowired
-	private TokenProviderImpl(JwtProperties jwtProperties) {
+	private TokenProviderImpl(JwtProperties jwtProperties,
+							  UserService userService) {
 		this.jwtProperties = jwtProperties;
+		this.userService = userService;
 	}
 
 	@Override
 	public String createAccessJwtToken(UserContext userContext) {
 		String userId = String.valueOf(userContext.getUserId());
-
-		Claims claims = Jwts.claims().setSubject(userId).setId(userId);
+		String userEmail = userContext.getEmail();
+		Claims claims = Jwts.claims().setSubject(userEmail).setId(userId);
 		claims.put(JWT_CONTEXT, userContext);
-
-		long tokenValidity = Long.parseLong(jwtProperties.getTokenValidity());
-
-		ZonedDateTime currentTime = DateTimeUtil.timeNow();
-
-		ZonedDateTime expirationZDT = currentTime.plusSeconds(tokenValidity);
-
-		Date issuedDate = DateTimeUtil.dateFromZonedDateTimeToNow();
-		Date expirationDate = DateTimeUtil.dateFromZonedDateTimeToNow(expirationZDT);
-
-		return Jwts.builder()
-				.setSubject(userId)//user id
-				.setClaims(claims)
-				.setId(userId)
-				//.setIssuer()
-				.setIssuedAt(issuedDate)
-				.setExpiration(expirationDate)
-				.signWith(SignatureAlgorithm.HS512, jwtProperties.getClientSecret())
-				.compact();
+		long accessTokenValidity = Long.parseLong(jwtProperties.getAccessTokenValidity());
+		return getJwt(userEmail, userId, claims, accessTokenValidity);
 	}
 
 	@Override
 	public String createRefreshToken(UserContext userContext) {
-		return null;
+		String userId = String.valueOf(userContext.getUserId());
+		String userEmail = userContext.getEmail();
+		Claims claims = Jwts.claims().setSubject(userEmail).setId(userId);
+		claims.put(JWT_CONTEXT, userContext);
+		long refreshTokenValidity = Long.parseLong(jwtProperties.getRefreshTokenValidity());
+		return getJwt(userEmail, userId, claims, refreshTokenValidity);
 	}
 
 	@Override
@@ -119,32 +111,35 @@ public class TokenProviderImpl implements TokenProvider {
 		UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
 		String userEmail = userPrincipal.getEmail();
 		String userId = String.valueOf(userPrincipal.getId());
-		Claims claims = Jwts.claims().setSubject(userEmail).setId(userEmail);
-
-		Map<String, Object> userContext = new HashMap<>();
-		userContext.put(USER_ID, userId);
-		userContext.put(USER_EMAIL, userEmail);
-		userContext.put(USER_NAME, "");
-		userContext.put(ROLES, "");
+		Claims claims = Jwts.claims().setSubject(userEmail).setId(userId);
+		List<String> authorities = userPrincipal.getAuthorities().stream()
+						.filter(Objects::nonNull).map(GrantedAuthority::getAuthority)
+										   .collect(Collectors.toList());
+		
+		Map<String, Object> userContext =
+				Map.of(USER_ID, userId,
+				USER_EMAIL, userEmail,
+				ROLES, authorities);
+		
 		claims.put(JWT_CONTEXT, userContext);
-
-		long tokenValidity = Long.parseLong(jwtProperties.getTokenValidity());
-
+		long tokenValidity = Long.parseLong(jwtProperties.getAccessTokenValidity());
+		return getJwt(userEmail, userId, claims, tokenValidity);
+	}
+	
+	private String getJwt(String userEmail, String userId, Claims claims, long tokenValidity) {
 		ZonedDateTime currentTime = DateTimeUtil.timeNow();
-
 		ZonedDateTime expirationZDT = currentTime.plusSeconds(tokenValidity);
-
 		Date issuedDate = DateTimeUtil.dateFromZonedDateTimeToNow();
 		Date expirationDate = DateTimeUtil.dateFromZonedDateTimeToNow(expirationZDT);
-
+		
 		return Jwts.builder()
-				.setSubject(userEmail)//user id
-				.setClaims(claims)
-				.setId(userId)
-				.setIssuer(ISSUER)
-				.setIssuedAt(issuedDate)
-				.setExpiration(expirationDate)
-				.signWith(SignatureAlgorithm.HS512, jwtProperties.getClientSecret())
-				.compact();
+					   .setSubject(userEmail)//user id
+					   .setClaims(claims)
+					   .setId(userId)
+					   .setIssuer(ISSUER)
+					   .setIssuedAt(issuedDate)
+					   .setExpiration(expirationDate)
+					   .signWith(SignatureAlgorithm.HS512, jwtProperties.getClientSecret())
+					   .compact();
 	}
 }

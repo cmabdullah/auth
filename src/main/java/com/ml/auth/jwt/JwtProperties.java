@@ -24,8 +24,11 @@ public class JwtProperties {
 	private String tokenPrivateSigningKey;
 	@Value("${auth.token.public-verifier-key}")
 	private String tokenPrivateVerifierKey;
-	@Value("${token.validity}")
-	private String tokenValidity;
+	@Value("${accessToken.validity}")
+	private String accessTokenValidity;
+	
+	@Value("${refreshToken.validity}")
+	private String refreshTokenValidity;
 
 	public String getClientId() {
 		return clientId;
@@ -43,14 +46,22 @@ public class JwtProperties {
 		this.clientSecret = clientSecret;
 	}
 
-	public String getTokenValidity() {
-		return tokenValidity;
+	public String getAccessTokenValidity() {
+		return accessTokenValidity;
 	}
 
-	public void setTokenValidity(String tokenValidity) {
-		this.tokenValidity = tokenValidity;
+	public void setAccessTokenValidity(String accessTokenValidity) {
+		this.accessTokenValidity = accessTokenValidity;
 	}
-
+	
+	public String getRefreshTokenValidity() {
+		return refreshTokenValidity;
+	}
+	
+	public void setRefreshTokenValidity(String refreshTokenValidity) {
+		this.refreshTokenValidity = refreshTokenValidity;
+	}
+	
 	public String getTokenType() {
 		return tokenType;
 	}
@@ -82,7 +93,7 @@ public class JwtProperties {
 		JwtProperties that = (JwtProperties) o;
 		return Objects.equals(getClientId(), that.getClientId()) &&
 				Objects.equals(getClientSecret(), that.getClientSecret()) &&
-				Objects.equals(getTokenValidity(), that.getTokenValidity()) &&
+				Objects.equals(getAccessTokenValidity(), that.getAccessTokenValidity()) &&
 				Objects.equals(getTokenType(), that.getTokenType()) &&
 				Objects.equals(getTokenPrivateSigningKey(), that.getTokenPrivateSigningKey()) &&
 				Objects.equals(getTokenPrivateVerifierKey(), that.getTokenPrivateVerifierKey());
@@ -90,7 +101,7 @@ public class JwtProperties {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(getClientId(), getClientSecret(), getTokenValidity(), getTokenType(), getTokenPrivateSigningKey(), getTokenPrivateVerifierKey());
+		return Objects.hash(getClientId(), getClientSecret(), getAccessTokenValidity(), getTokenType(), getTokenPrivateSigningKey(), getTokenPrivateVerifierKey());
 	}
 
 	@Override
@@ -98,7 +109,8 @@ public class JwtProperties {
 		return "JwtProperties{" +
 				"clientId='" + clientId + '\'' +
 				", clientSecret='" + clientSecret + '\'' +
-				", tokenValidity='" + tokenValidity + '\'' +
+				", accessTokenValidity='" + accessTokenValidity + '\'' +
+				", refreshTokenValidity='" + refreshTokenValidity + '\'' +
 				", tokenType=" + tokenType +
 				", tokenPrivateSigningKey='" + tokenPrivateSigningKey + '\'' +
 				", tokenPrivateVerifierKey='" + tokenPrivateVerifierKey + '\'' +

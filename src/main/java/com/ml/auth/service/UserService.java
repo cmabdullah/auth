@@ -27,6 +27,7 @@ public interface UserService {
 	SignUpResponseDto saveAdmin(SignUpRequestDto signUpRequestDto);
 
 	LoginResponseDto adminLoginIn(LoginRequestDto loginRequestDto);
-
-
+	
+	
+	boolean isUserDeleted(User user);
 }

@@ -2,14 +2,17 @@ package com.ml.auth.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.ml.auth.constants.AuthProvider;
+import com.ml.auth.constants.UserStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import javax.persistence.*;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotNull;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -47,4 +50,10 @@ public class User extends BaseEntity {
 			inverseJoinColumns = @JoinColumn(name = "role_id")
 	)
 	private Set<Role> roles = new HashSet<>();
+	@Enumerated(EnumType.STRING)
+	private UserStatus userStatus;
+	
+	@ToString.Exclude
+	@OneToMany(fetch = FetchType.LAZY, mappedBy = "user")
+	private List<AccessToken> accessTokens;
 }

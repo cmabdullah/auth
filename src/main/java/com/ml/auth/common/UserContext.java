@@ -5,6 +5,7 @@ import lombok.Value;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * BookWormV2
@@ -15,10 +16,15 @@ import java.util.Collections;
 @Value(staticConstructor = "of")
 public class UserContext {
 
-	private final int userId;
+	private final long userId;
+	private final String email;
 	private final Collection<Role> roles;
 
-	public static UserContext of(int userId, Role role){
-		return of(userId, Collections.singleton(role));
+	public static UserContext of(long userId, String email, Role role){
+		return of( userId,email, Collections.singleton(role));
 	}
+	
+//	public static UserContext of(long userId, String email, List<Role> roles){
+//		return of(userId, email, roles);
+//	}
 }
