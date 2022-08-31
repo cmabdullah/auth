@@ -7,7 +7,9 @@ import com.ml.coreweb.exception.ApiError;
 import com.ml.coreweb.util.DateTimeUtil;
 import io.jsonwebtoken.*;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -35,7 +37,7 @@ public class TokenProviderImpl implements TokenProvider {
 
 	@Autowired
 	private TokenProviderImpl(JwtProperties jwtProperties,
-							  UserService userService) {
+							  @Lazy UserService userService) {
 		this.jwtProperties = jwtProperties;
 		this.userService = userService;
 	}
@@ -70,7 +72,21 @@ public class TokenProviderImpl implements TokenProvider {
 		parseClaims(authToken);
 		return true;
 	}
-
+	
+	@Override
+	public boolean isTokenValid(String authToken) {
+		try {
+			if (StringUtils.isBlank(authToken)) {
+				return false;
+			}
+			parseClaims(authToken);
+			return true;
+		} catch (Exception e){
+			log.error("token.not.valid {}", e.getLocalizedMessage());
+			return false;
+		}
+	}
+	
 	@Deprecated
 	public Integer getUserIdFromToken(String token) {
 		Claims claims = Jwts.parser()

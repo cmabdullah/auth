@@ -4,6 +4,7 @@ import com.ml.auth.common.UserContext;
 import com.ml.auth.constants.AuthConstants;
 import com.ml.auth.constants.AuthProvider;
 import com.ml.auth.constants.UserStatus;
+import com.ml.auth.domain.AccessToken;
 import com.ml.auth.domain.Role;
 import com.ml.auth.domain.User;
 import com.ml.auth.jwt.TokenProvider;
@@ -14,7 +15,10 @@ import com.ml.auth.response.LoginResponseDto;
 import com.ml.auth.response.SignUpResponseDto;
 import com.ml.auth.validator.SignUpRequestDtoValidator;
 import com.ml.coreweb.exception.ApiError;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -22,7 +26,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.SQLException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -41,13 +47,15 @@ public class UserServiceImpl implements UserService {
 	private final AuthenticationManager authenticationManager;
 	private final TokenProvider tokenProvider;
 	private final RoleService roleService;
+	private final AccessTokenService accessTokenService;
 	
 	@Autowired
 	private UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder,
 							SignUpRequestDtoValidator signUpRequestDtoValidator,
 							AuthenticationManager authenticationManager,
-							TokenProvider tokenProvider,
-							RoleService roleService
+							@Lazy TokenProvider tokenProvider,
+							RoleService roleService,
+							AccessTokenService accessTokenService
 	) {
 		this.userRepository = userRepository;
 		this.passwordEncoder = passwordEncoder;
@@ -55,6 +63,7 @@ public class UserServiceImpl implements UserService {
 		this.authenticationManager = authenticationManager;
 		this.tokenProvider = tokenProvider;
 		this.roleService = roleService;
+		this.accessTokenService = accessTokenService;
 		
 	}
 	
@@ -81,6 +90,9 @@ public class UserServiceImpl implements UserService {
 		user.setPassword(passwordEncoder.encode(signUpRequestDto.getPassword()));
 		user.setProvider(AuthProvider.LOCAL);
 		user.setUserStatus(UserStatus.ACTIVE);
+		UserContext userContext = UserContext.of(0, user.getEmail(), user.getRoles());
+		String refreshToken = tokenProvider.createRefreshToken(userContext);
+		user.setRefreshToken(refreshToken);
 		Set<Role> role = new HashSet<>();
 		role.add(new Role("ROLE_USER"));
 //		Set<Role> role2 = roleService.save(role);
@@ -106,6 +118,7 @@ public class UserServiceImpl implements UserService {
 	}
 	
 	@Override
+	//@Transactional implementation needed
 	public LoginResponseDto adminLoginIn(LoginRequestDto loginRequestDto) {
 		Authentication authentication = authenticationManager.authenticate(
 				new UsernamePasswordAuthenticationToken(
@@ -125,19 +138,61 @@ public class UserServiceImpl implements UserService {
 			throw new ApiError("username.or.password.not.matched", HttpStatus.EXPECTATION_FAILED);
 		}
 		
+		//removed expired tokens
+		boolean dataUpdated = removeAndUpdateAccessTokenAndRefreshToken(user);
+		
+		String oldRefreshToken = user.getRefreshToken();
+		
+		boolean isRefreshTokenValid = StringUtils.isNoneBlank(oldRefreshToken);
+		UserContext userContext = UserContext.of(user.getId(), user.getEmail(), user.getRoles());
+		String newAccessToken = tokenProvider.createAccessJwtToken(userContext);
+		
+		//to do check update time with issuer time
+		LoginResponseDto loginResponseDto = new LoginResponseDto();
+		if (!isRefreshTokenValid) {
+			// check refresh token is available or not
+			//to do
+			String refreshToken = tokenProvider.createRefreshToken(userContext);
+			user.setRefreshToken(refreshToken);
+			loginResponseDto.setRefreshToken(refreshToken);
+		} else {
+			loginResponseDto.setRefreshToken(oldRefreshToken);
+		}
+		
+		AccessToken accessToken = new AccessToken();
+		accessToken.setAccessToken(newAccessToken);
+		accessToken.setUser(user);
+		
+		accessTokenService.save(accessToken);
+		userRepository.save(user);
 		
 		SecurityContextHolder.getContext().setAuthentication(authentication);
-		UserContext userContext = UserContext.of(user.getId(), user.getEmail(), user.getRoles());
-		String accessToken = tokenProvider.createAccessJwtToken(userContext);
 		
-		// check refresh token is available or not
-		//to do
-		String refreshToken = tokenProvider.createRefreshToken(userContext);
-		LoginResponseDto loginResponseDto = new LoginResponseDto();
-		loginResponseDto.setAccessToken(accessToken);
+		loginResponseDto.setAccessToken(newAccessToken);
 		loginResponseDto.setEmail(loginRequestDto.getEmail());
 		loginResponseDto.setTokenType(AuthConstants.TOKEN_TYPE);
 		return loginResponseDto;
+	}
+	
+	//todo optimise code
+	private boolean removeAndUpdateAccessTokenAndRefreshToken(User user) {
+		boolean refreshOrAccessTokenUpdate = false;
+		List<AccessToken> accessTokenList = user.getAccessTokens();
+		if (CollectionUtils.isNotEmpty(accessTokenList)) {
+			List<AccessToken> livedAccessTokenList =
+					accessTokenList.stream().filter(Objects::nonNull)
+							.filter(accessToken -> tokenProvider.isTokenValid(
+									accessToken.getAccessToken())).collect(Collectors.toList());
+			user.setAccessTokens(livedAccessTokenList);
+			refreshOrAccessTokenUpdate = true;
+		}
+		
+		if (!tokenProvider.isTokenValid(user.getRefreshToken())) {
+			//prepare refresh token
+			user.setRefreshToken(null);
+			refreshOrAccessTokenUpdate = true;
+		}
+		return refreshOrAccessTokenUpdate;
 	}
 	
 	@Override

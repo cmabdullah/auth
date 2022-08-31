@@ -5,11 +5,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import java.util.Objects;
+import javax.persistence.*;
+import javax.validation.constraints.Size;
 
 /**
  * Reusable Lib
@@ -22,7 +19,7 @@ import java.util.Objects;
 @AllArgsConstructor
 @NoArgsConstructor
 public class AccessToken extends BaseEntity {
-	
+	@Size(max=500)
 	private String accessToken;
 	@ToString.Exclude
 	@ManyToOne(fetch = FetchType.EAGER)

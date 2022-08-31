@@ -19,6 +19,8 @@ public interface TokenProvider {
 	boolean revokeToken(UserContext userContext);
 
 	boolean validateToken(String authToken);
+	
+	boolean isTokenValid(String authToken);
 
 	Integer getUserIdFromToken(String token);
 

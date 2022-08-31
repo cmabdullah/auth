@@ -11,6 +11,7 @@ import lombok.ToString;
 import javax.persistence.*;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -39,6 +40,8 @@ public class User extends BaseEntity {
 	private Boolean emailVerified = false;
 	@JsonIgnore
 	private String password;
+	@Size(max=500)
+	private String refreshToken;
 	@NotNull
 	@Enumerated(EnumType.STRING)
 	private AuthProvider provider;
@@ -54,6 +57,6 @@ public class User extends BaseEntity {
 	private UserStatus userStatus;
 	
 	@ToString.Exclude
-	@OneToMany(fetch = FetchType.LAZY, mappedBy = "user")
+	@OneToMany(fetch = FetchType.EAGER, mappedBy = "user")
 	private List<AccessToken> accessTokens;
 }
