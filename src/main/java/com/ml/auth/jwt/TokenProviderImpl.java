@@ -142,6 +142,13 @@ public class TokenProviderImpl implements TokenProvider {
 		return getJwt(userEmail, userId, claims, tokenValidity);
 	}
 	
+	@Override
+	public boolean claimsAreValidAfterChangePassword(String authToken, ZonedDateTime lastChangedPassword) {
+		Claims claims = parseClaims(authToken);
+		ZonedDateTime issuedTime = DateTimeUtil.zonedDateTimeFromDate(claims.getIssuedAt());
+		return issuedTime.isAfter(lastChangedPassword);
+	}
+	
 	private String getJwt(String userEmail, String userId, Claims claims, long tokenValidity) {
 		ZonedDateTime currentTime = DateTimeUtil.timeNow();
 		ZonedDateTime expirationZDT = currentTime.plusSeconds(tokenValidity);

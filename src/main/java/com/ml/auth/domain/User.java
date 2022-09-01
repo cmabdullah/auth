@@ -12,6 +12,7 @@ import javax.persistence.*;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -58,5 +59,9 @@ public class User extends BaseEntity {
 	
 	@ToString.Exclude
 	@OneToMany(fetch = FetchType.EAGER, mappedBy = "user")
-	private List<AccessToken> accessTokens;
+	private Set<AccessToken> accessTokens;
+
+	@Column(nullable = false)
+	private Instant lastPasswordChangeTime;
+	
 }

@@ -5,6 +5,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -21,12 +22,22 @@ public class UserPrincipal implements UserDetails {
 	private String password;
 	private Collection<? extends GrantedAuthority> authorities;
 	private Map<String, Object> attributes;
+	private Instant lastPasswordChangeTime;
 
 	public UserPrincipal(Long id, String email, String password, Collection<? extends GrantedAuthority> authorities) {
 		this.id = id;
 		this.email = email;
 		this.password = password;
 		this.authorities = authorities;
+	}
+	
+	public UserPrincipal(Long id, String email, String password, Collection<? extends GrantedAuthority> authorities,
+						 Instant lastPasswordChangeTime) {
+		this.id = id;
+		this.email = email;
+		this.password = password;
+		this.authorities = authorities;
+		this.lastPasswordChangeTime = lastPasswordChangeTime;
 	}
 
 	public static UserPrincipal create(User user) {
@@ -39,7 +50,8 @@ public class UserPrincipal implements UserDetails {
 				user.getId(),
 				user.getEmail(),
 				user.getPassword(),
-				authorities
+				authorities,
+				user.getLastPasswordChangeTime()
 		);
 	}
 
@@ -108,5 +120,9 @@ public class UserPrincipal implements UserDetails {
 
 	public void setPassword(String password) {
 		this.password = password;
+	}
+	
+	public Instant getLastPasswordChangeTime() {
+		return lastPasswordChangeTime;
 	}
 }

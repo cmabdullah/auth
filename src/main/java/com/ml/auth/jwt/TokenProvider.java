@@ -4,6 +4,8 @@ import com.ml.auth.common.UserContext;
 import io.jsonwebtoken.Claims;
 import org.springframework.security.core.Authentication;
 
+import java.time.ZonedDateTime;
+
 /*
  * @created 13/06/2021 - 10:26 AM
  * @project ClassifiedECommerce
@@ -28,4 +30,6 @@ public interface TokenProvider {
 
 	@Deprecated
 	String createToken(Authentication authentication);
+	
+	boolean claimsAreValidAfterChangePassword(String authToken, ZonedDateTime lastChangedPassword);
 }
