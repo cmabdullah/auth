@@ -1,8 +1,17 @@
+buildscript {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4.29.0"
+    }
+}
 plugins {
     id 'org.springframework.boot' version '2.4.5' apply false
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+    id "com.jfrog.bintray" version "1.7.3"
     id 'java'
-    // Apply the java-library plugin to add support for Java Library
     id 'java-library'
 }
 
@@ -12,6 +21,7 @@ apply plugin: 'io.spring.dependency-management'
 apply plugin: 'maven'
 apply plugin: 'maven-publish'
 apply plugin: 'java'
+apply plugin: 'com.jfrog.artifactory'
 
 group = 'com.ml'
 version = '10.0.3'
@@ -61,12 +71,6 @@ tasks.named('test') {
     useJUnitPlatform()
 }
 
-tasks.named('bootBuildImage') {
-    builder = 'paketobuildpacks/builder:tiny'
-    environment = ['BP_NATIVE_IMAGE': 'true']
-}
-
-
 //test {
 //    useJUnitPlatform()
 //}
@@ -80,21 +84,36 @@ jar {
     destinationDir = file("build/libs")
 }
 
-publishing {
-    publications {
-        maven(MavenPublication) {
-            artifact("build/libs/auth-$version"+".jar") {
-                extension 'jar'
-            }
+task sourcesJar(type: Jar) {
+    from sourceSets.main.allJava
+    archiveClassifier = 'sources'
+}
+
+artifactory {
+    contextUrl = 'https://cmabdullah21.jfrog.io/artifactory/'
+    publish {
+        repository {
+            repoKey = 'gradle-challenge-local' // The Artifactory repository key to publish to
+            username = "abdullah"
+            password = "789abc123AAA@10110"
+        }
+        defaults {
+            publications('mavenJava')
+            publishArtifacts = true
+            // Properties to be attached to the published artifacts.
+            properties = ['qa.level': 'basic', 'dev.team' : 'core']
+            // Publish generated POM files to Artifactory (true by default)
+            publishPom = true
         }
     }
-    repositories {
-        maven {
-            name 'auth'
-            url "http://[your nexus ip]:[your nexus port]/repository/maven-releases/"
-            credentials {
-                username project.repoUser
-                password project.repoPassword
-            }}
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            //  Upload source code at the same time
+            artifact sourcesJar
+        }
     }
 }
