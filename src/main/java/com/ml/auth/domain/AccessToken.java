@@ -1,9 +1,6 @@
 package com.ml.auth.domain;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 
 import javax.persistence.*;
 import javax.validation.constraints.Size;
@@ -14,8 +11,9 @@ import javax.validation.constraints.Size;
  * User Khan, C M Abdullah
  * Ref:
  */
-@Data
 @Entity
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 public class AccessToken extends BaseEntity {

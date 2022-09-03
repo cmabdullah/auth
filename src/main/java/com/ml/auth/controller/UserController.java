@@ -2,6 +2,7 @@ package com.ml.auth.controller;
 
 import com.ml.auth.domain.User;
 import com.ml.auth.request.UserProfileRequestDto;
+import com.ml.auth.response.UserProfileResponseDto;
 import com.ml.auth.service.UserService;
 import com.ml.coreweb.exception.ApiError;
 import com.ml.coreweb.response.ApiResponse;
@@ -34,9 +35,6 @@ public class UserController {
 			Authentication authentication,
 			//@CurrentUser
 			@Valid @RequestBody UserProfileRequestDto userProfileRequestDto) {
-		User user = userService.findByEmail(userProfileRequestDto.getEmail()).orElseThrow(
-				ApiError.createSingletonSupplier("Email not found " +
-						userProfileRequestDto.getEmail(), HttpStatus.BAD_REQUEST));
-		return new ApiResponse<>(user);
+		return new ApiResponse<>(userService.getProfile(userProfileRequestDto));
 	}
 }

@@ -3,10 +3,7 @@ package com.ml.auth.domain;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.ml.auth.constants.AuthProvider;
 import com.ml.auth.constants.UserStatus;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 
 import javax.persistence.*;
 import javax.validation.constraints.Email;
@@ -23,6 +20,8 @@ import java.util.Set;
  * User Khan, C M Abdullah
  * Ref:
  */
+@Getter
+@Setter
 @Entity
 @Table(name = "users", uniqueConstraints = {
 		@UniqueConstraint(columnNames = "email")

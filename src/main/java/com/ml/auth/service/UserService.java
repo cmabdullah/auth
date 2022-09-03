@@ -3,9 +3,12 @@ package com.ml.auth.service;
 
 import com.ml.auth.domain.User;
 import com.ml.auth.request.LoginRequestDto;
+import com.ml.auth.request.PasswordChangedRequestDto;
 import com.ml.auth.request.SignUpRequestDto;
+import com.ml.auth.request.UserProfileRequestDto;
 import com.ml.auth.response.LoginResponseDto;
 import com.ml.auth.response.SignUpResponseDto;
+import com.ml.auth.response.UserProfileResponseDto;
 
 import java.util.Optional;
 
@@ -30,4 +33,8 @@ public interface UserService {
 	
 	
 	boolean isUserDeleted(User user);
+	
+	SignUpResponseDto changePassword(PasswordChangedRequestDto passwordChangedRequestDto);
+	
+	UserProfileResponseDto getProfile(UserProfileRequestDto userProfileRequestDto);
 }

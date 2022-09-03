@@ -10,9 +10,12 @@ import com.ml.auth.domain.User;
 import com.ml.auth.jwt.TokenProvider;
 import com.ml.auth.repository.UserRepository;
 import com.ml.auth.request.LoginRequestDto;
+import com.ml.auth.request.PasswordChangedRequestDto;
 import com.ml.auth.request.SignUpRequestDto;
+import com.ml.auth.request.UserProfileRequestDto;
 import com.ml.auth.response.LoginResponseDto;
 import com.ml.auth.response.SignUpResponseDto;
+import com.ml.auth.response.UserProfileResponseDto;
 import com.ml.auth.validator.SignUpRequestDtoValidator;
 import com.ml.coreweb.exception.ApiError;
 import com.ml.coreweb.util.DateTimeUtil;
@@ -26,6 +29,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -224,5 +228,45 @@ public class UserServiceImpl implements UserService {
 	public boolean isUserDeleted(User user) {
 		UserStatus status = user.getUserStatus();
 		return !user.isActive() && status == UserStatus.DELETED;
+	}
+	
+	@Override
+	public SignUpResponseDto changePassword(PasswordChangedRequestDto passwordChangedRequestDto) {
+		User user = findByEmail(passwordChangedRequestDto.getEmail()).orElseThrow(
+				ApiError.createSingletonSupplier("user.not.valid", HttpStatus.NOT_FOUND));
+		
+		String oldPassword = user.getPassword();
+		String requestedOldPassword = passwordChangedRequestDto.getOldPassword();
+		
+		if (passwordEncoder.matches(requestedOldPassword, oldPassword) &&
+					passwordChangedRequestDto.getNewPassword()
+							.equals(passwordChangedRequestDto.getRetypePassword())) {
+			
+			String encodedRequestedNewPassword = passwordEncoder.encode(passwordChangedRequestDto.getNewPassword());
+			user.setPassword(encodedRequestedNewPassword);
+			user.setLastPasswordChangeTime(DateTimeUtil.timeNow().toInstant());
+			User updatedUser = userRepository.save(user);
+			
+			SignUpResponseDto signUpResponseDto = new SignUpResponseDto();
+			signUpResponseDto.setEmail(updatedUser.getEmail());
+			signUpResponseDto.setMessage("password change success");
+			return signUpResponseDto;
+		} else {
+			throw new ApiError(
+					"old.password.or.new.password.does.not.match.or.requested.password.does.not.synced",
+					HttpStatus.BAD_REQUEST);
+		}
+	}
+	
+	@Override
+	public UserProfileResponseDto getProfile(UserProfileRequestDto userProfileRequestDto) {
+		User user = findByEmail(userProfileRequestDto.getEmail()).orElseThrow(
+				ApiError.createSingletonSupplier("Email not found " +
+														 userProfileRequestDto.getEmail(), HttpStatus.BAD_REQUEST));
+		UserProfileResponseDto userProfileResponseDto = new UserProfileResponseDto();
+		userProfileResponseDto.setEmail(user.getEmail());
+		userProfileResponseDto.setProvider(user.getProvider());
+		userProfileResponseDto.setName(user.getName());
+		return userProfileResponseDto;
 	}
 }

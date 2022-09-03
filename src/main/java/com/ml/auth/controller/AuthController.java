@@ -1,6 +1,8 @@
 package com.ml.auth.controller;
 
 import com.ml.auth.request.LoginRequestDto;
+import com.ml.auth.request.PasswordChangedRequestDto;
+import com.ml.auth.response.LoginResponseDto;
 import com.ml.auth.response.SignUpResponseDto;
 import com.ml.auth.service.UserService;
 import com.ml.auth.request.SignUpRequestDto;
@@ -8,6 +10,7 @@ import com.ml.coreweb.response.ApiResponse;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -45,5 +48,13 @@ public class AuthController {
 	@PostMapping("/login")
 	public ApiResponse<?> authenticateUser(@Valid @RequestBody LoginRequestDto loginRequestDto) {
 		return new ApiResponse<>(userService.adminLoginIn(loginRequestDto));
+	}
+	
+	@ApiOperation(value = "[TEST]changed password request --> done")
+	@PostMapping("/changePassword")
+	public ApiResponse<?> logOut(@Valid @RequestBody PasswordChangedRequestDto passwordChangedRequestDto) {
+		
+		SignUpResponseDto changedPasswordDto = userService.changePassword(passwordChangedRequestDto);
+		return new ApiResponse<>(changedPasswordDto);
 	}
 }
